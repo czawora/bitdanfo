@@ -1,8 +1,19 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+
+    <color name="primary">#FFFFFF</color>
+    <color name="primary_dark">#3A81D1</color>
+
     <color name="colorPrimary">#3F51B5</color>
     <color name="colorPrimaryDark">#303F9F</color>
     <color name="colorAccent">#FF4081</color>
 
     <color name="colorDanfoYellow">#FCD23A</color>
+
+    <color name="color_dark_custom_fragment_1">#BF360C</color>
+    <color name="color_dark_custom_fragment_2">#303F9F</color>
+
+    <color name="color_custom_fragment_1">#E64A19</color>
+    <color name="color_custom_fragment_2">#3F51B5</color>
+
 </resources>

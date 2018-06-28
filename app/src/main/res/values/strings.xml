@@ -1,3 +1,10 @@
 <resources>
     <string name="app_name">Bitdanfo</string>
+    <string name="radioDriver">I drive a Danfo</string>
+    <string name="radioNonDriver">I do not drive a Danfo</string>
+    <string name="chk_accept_irb">I accept the IRB terms</string>
+    <string name="IRBtext">IRB text</string>
+
+    <!-- TODO: Remove or change this placeholder text -->
+    <string name="hello_blank_fragment">Hello blank fragment</string>
 </resources>

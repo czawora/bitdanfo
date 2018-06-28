@@ -1,13 +1,12 @@
 package com.bitdanfo.android.bitdanfo;
 
-import android.*;
 import android.Manifest;
 import android.app.Activity;
 import android.content.Context;
+import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
-import android.support.annotation.Nullable;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
 import android.telephony.TelephonyManager;
@@ -16,13 +15,11 @@ import android.view.View;
 import android.widget.Button;
 import android.widget.Toast;
 
-import com.android.volley.Cache;
 import com.android.volley.NetworkResponse;
 import com.android.volley.Request;
 import com.android.volley.RequestQueue;
 import com.android.volley.Response;
 import com.android.volley.VolleyError;
-import com.android.volley.toolbox.StringRequest;
 import com.android.volley.toolbox.Volley;
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Task;
@@ -36,6 +33,8 @@ public class LoginActivity extends Activity {
     private static final String TAG = "LoginActivity";
     private static final int REQUEST_READ_PHONE_STATE = 1;
     private static final int REQUEST_INTERNET = 2;
+    private static final int REQUEST_LOCATION = 3;
+
 
     private FirebaseAuth mAuth;
     private FirebaseUser mUser;
@@ -46,8 +45,8 @@ public class LoginActivity extends Activity {
 
     private boolean tokenResponseReceived = true;
     private byte[] mToken;
-    private String mHeader_Info;
-    private String mHeader_User;
+    private String mHeader_Info = "";
+    private String mHeader_User = "";
 
 
     //subclass of Volley Request to get http response header info
@@ -95,8 +94,10 @@ public class LoginActivity extends Activity {
 
     protected void sendTokenRequest( String deviceId ){
 
+        mRequestQueue.cancelAll(TAG);
+
         //ensures only 1 token request is sent at a time
-        if ( tokenResponseReceived ) {
+      //  if ( tokenResponseReceived ) {
 
             String requestUrl = login_url + "/+" + deviceId;
             Log.d(requestUrl, TAG);
@@ -120,15 +121,16 @@ public class LoginActivity extends Activity {
             mRequestQueue.add(tokenRequest);
             tokenResponseReceived = false;
 
-        }
+        //}
     }
 
     protected void completeLogin(){
 
         Log.d("in completeLogin", TAG);
 
-        Log.v(TAG, mToken.toString());
-        mAuth.signInWithCustomToken(mToken.toString()).addOnCompleteListener(this,
+        String tokenString = new String(mToken);
+        Log.v(TAG, tokenString);
+        mAuth.signInWithCustomToken(tokenString).addOnCompleteListener(this,
                 new OnCompleteListener<AuthResult>() {
             @Override
             public void onComplete(@NonNull Task<AuthResult> task) {
@@ -136,8 +138,8 @@ public class LoginActivity extends Activity {
 
                     // Sign in success, update UI with the signed-in user's information
                     Log.d(TAG, "signInWithCustomToken:success");
-                    mUser = mAuth.getCurrentUser();
 
+                    nextActivity();
                 } else {
 
                     // If sign in fails, display a message to the user.
@@ -152,6 +154,12 @@ public class LoginActivity extends Activity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+
+    }
+
+    @Override
+    protected void onResume(){
+        super.onResume();
         setContentView(R.layout.activity_login);
 
         Log.d(TAG, "get firebase instance");
@@ -200,6 +208,7 @@ public class LoginActivity extends Activity {
 
         boolean has_phoneStatePermission = false;
         boolean has_internetPermission = false;
+        boolean has_locationPermisssion = false;
 
         Log.d(TAG, "attemptLogin: check for READ_PHONE_STATE permissions");
         if (ContextCompat.checkSelfPermission(this, android.Manifest.permission.READ_PHONE_STATE)
@@ -237,9 +246,63 @@ public class LoginActivity extends Activity {
 
         }
 
+        Log.d(TAG, "attemptLogin: check for LOCATION permissions");
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION)
+                != PackageManager.PERMISSION_GRANTED) {
+            // Permission is not granted
+            // ask for permission
+
+            Log.d(TAG, "attemptLogin: requesting LOCATION permissions");
+
+            ActivityCompat.requestPermissions(this,
+                    new String[]{Manifest.permission.ACCESS_FINE_LOCATION},
+                    REQUEST_LOCATION);
+        } else {
+
+            has_locationPermisssion = true;
+            Log.d(TAG, "attemptLogin: LOCATION permissions already granted");
+
+        }
+
         //once both permissions are granted, then login
-        if (has_internetPermission && has_phoneStatePermission) {
-            login();
+        if (has_internetPermission && has_phoneStatePermission && has_locationPermisssion) {
+
+            if (mUser == null) {
+                login();
+            }else{
+                nextActivity();
+            }
+        }
+
+    }
+
+    public void nextActivity(){
+
+        mUser = mAuth.getCurrentUser();
+
+        if (mUser == null){
+            Log.d(TAG, "mUser is null");
+        }
+
+        Log.d(TAG, "nextActivity");
+        if (mHeader_Info.equals("good_token")){
+
+            Log.d(TAG, "nextActivity_good_token");
+            Log.d(TAG, "mUser.getDisplayName: " + mUser.getDisplayName());
+
+            if (mUser.getDisplayName().equals("-----")){
+
+                Intent intent = new Intent(this, InfoUpdateActivity.class);
+                startActivity(intent);
+
+            }else{
+
+                Intent intent = new Intent(this, EndActivity.class);
+                startActivity(intent);
+
+            }
+
+
         }
 
     }
@@ -271,6 +334,21 @@ public class LoginActivity extends Activity {
                     // permission was granted, yay! Do the
                     // contacts-related task you need to do.
                     Log.d(TAG, "onRequestPermissionsResult: INTERNET permissions received");
+
+
+                } else {
+
+                    // permission denied, boo! Disable the
+                    // functionality that depends on this permission.
+                }
+            }
+            case REQUEST_LOCATION: {
+                if (grantResults.length > 0
+                        && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+
+                    // permission was granted, yay! Do the
+                    // contacts-related task you need to do.
+                    Log.d(TAG, "onRequestPermissionsResult: LOCATION permissions received");
 
 
                 } else {
